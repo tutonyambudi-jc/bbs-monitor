@@ -8,8 +8,9 @@
   "scripts": {
     "dev": "next dev -p 3003",
     "build": "prisma generate && next build",
+    "postbuild": "node scripts/copy-standalone-assets.cjs",
     "prestart": "prisma db push --skip-generate",
-    "start": "node .next/standalone/server.js",
+    "start": "node scripts/start-standalone.cjs",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

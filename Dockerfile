@@ -9,7 +9,7 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-RUN npm run build
+RUN npm run build && node scripts/copy-standalone-assets.cjs
 
 FROM base AS runner
 ENV NODE_ENV=production
@@ -21,5 +21,6 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 EXPOSE 3003
+ENV HOSTNAME=0.0.0.0
 ENV PORT=3003
 CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]
