@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bbs-monitor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bbs_monitor
+      POSTGRES_PASSWORD: bbs_monitor
+      POSTGRES_DB: bbs_monitor
+    ports:
+      - "5433:5432"
+    volumes:
+      - bbs_monitor_pg_data:/var/lib/postgresql/data
+
+volumes:
+  bbs_monitor_pg_data:

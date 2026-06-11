@@ -1,0 +1,152 @@
+// BBS Monitor — surveillance écosystème BBS
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ServiceCategory {
+  ERP_BBS
+  TRAVELIA_ERP
+  TRAVELIA_API
+  TRAVELIA_WEB
+  ECHO_CHALLENGE
+  OTHER
+}
+
+enum ServiceStatus {
+  ONLINE
+  OFFLINE
+  DEGRADED
+  UNKNOWN
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  username     String     @unique
+  passwordHash String     @map("password_hash")
+  fullName     String     @map("full_name")
+  role         UserRole   @default(VIEWER)
+  status       UserStatus @default(ACTIVE)
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Service {
+  id              String          @id @default(cuid())
+  name            String
+  slug            String          @unique
+  description     String?
+  category        ServiceCategory @default(OTHER)
+  baseUrl         String?         @map("base_url")
+  healthUrl       String          @map("health_url")
+  isEnabled       Boolean         @default(true) @map("is_enabled")
+  status          ServiceStatus   @default(UNKNOWN)
+  lastResponseMs  Int?            @map("last_response_ms")
+  lastStatusCode  Int?            @map("last_status_code")
+  lastError       String?         @map("last_error")
+  lastCheckedAt   DateTime?       @map("last_checked_at")
+  degradedMs      Int             @default(2000) @map("degraded_ms")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  healthChecks HealthCheck[]
+  alerts       Alert[]
+
+  @@index([status])
+  @@index([category])
+  @@map("services")
+}
+
+model HealthCheck {
+  id           String        @id @default(cuid())
+  serviceId    String        @map("service_id")
+  service      Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status       ServiceStatus
+  responseMs   Int           @map("response_ms")
+  statusCode   Int?          @map("status_code")
+  errorMessage String?       @map("error_message")
+  checkedAt    DateTime      @default(now()) @map("checked_at")
+
+  @@index([serviceId, checkedAt])
+  @@map("health_checks")
+}
+
+model Alert {
+  id          String        @id @default(cuid())
+  serviceId   String?       @map("service_id")
+  service     Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  title       String
+  message     String
+  severity    AlertSeverity @default(WARNING)
+  status      AlertStatus   @default(OPEN)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  resolvedAt  DateTime?     @map("resolved_at")
+
+  @@index([status, createdAt])
+  @@index([serviceId])
+  @@map("alerts")
+}
+
+model ServerMetric {
+  id            String   @id @default(cuid())
+  hostname      String   @default("local")
+  cpuPercent    Float    @map("cpu_percent")
+  memoryPercent Float    @map("memory_percent")
+  diskPercent   Float?   @map("disk_percent")
+  loadAvg1      Float?   @map("load_avg_1")
+  recordedAt    DateTime @default(now()) @map("recorded_at")
+
+  @@index([recordedAt])
+  @@map("server_metrics")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
