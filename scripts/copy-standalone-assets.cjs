@@ -16,7 +16,11 @@ if (!fs.existsSync(staticDir)) {
   process.exit(1);
 }
 
-fs.cpSync(publicDir, path.join(standaloneDir, 'public'), { recursive: true });
+if (fs.existsSync(publicDir)) {
+  fs.cpSync(publicDir, path.join(standaloneDir, 'public'), { recursive: true });
+} else {
+  console.warn('[bbs-monitor] Dossier public/ absent — ignoré.');
+}
 fs.cpSync(staticDir, path.join(standaloneDir, '.next/static'), { recursive: true });
 
 console.log('[bbs-monitor] Assets copiés vers .next/standalone (public + static).');

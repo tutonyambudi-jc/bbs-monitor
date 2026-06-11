@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Fingerprint, Lock, Shield, User } from 'lucide-react';
+import loginBg from '../../../public/login-bg.jpg';
 import { cn } from '@/lib/utils';
 
 const REMEMBER_KEY = 'bbs-monitor-remember-email';
@@ -130,10 +131,11 @@ export function LoginForm() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <Image
-        src="/login-bg.png"
+        src={loginBg}
         alt=""
         fill
         priority
+        unoptimized
         className="object-cover object-center"
         sizes="100vw"
       />
